@@ -1,4 +1,5 @@
 from bitstring import *
+import copy
 
 #TODO: Programa Main para poder ejecutar esto de forma cómoda
 #NOTA: requiere instalar la biblioteca bitstring (pip install bitstring)
@@ -95,6 +96,11 @@ def product_in_field(a, b, irreducible_polynomial):
     if result_degree >= irreducible_degree:
          result = division(result, irreducible_polynomial)[1]
 
+    #If the length of the result is smaller than the degree of the irreducible polynomial
+    #(the length of the elements from the field), padding zeros are added to the left
+    if len(result) < irreducible_degree:
+        while (len(result) < irreducible_degree):
+            result.prepend('0b0')
     return result
 
 def polynomial_product(a, b):
@@ -146,7 +152,6 @@ def polynomial_product(a, b):
         else:
             break
     result = result[bits_to_crop:]
-    result_degree = len(result) - 1
 
     return result
 
@@ -159,6 +164,7 @@ def division(dividend, divisor):
     :return: A tuple containing a Bits object with the quotient and a Bits object
     with the remainder
     """
+    divisor = copy.copy(divisor)
     #Crop both dividend and divisor so there are no 0 to the left
     for i in range(len(dividend)):
         if dividend[i] == 0:
@@ -178,7 +184,6 @@ def division(dividend, divisor):
     #the dividend, + 1 since a polynomial of degree n has n + 1 elements
     quotient = BitArray(dividend_degree + 1)
     remainder = dividend
-
     while remainder.int != 0 and remainder_degree >= divisor_degree:
         #t -> result of the division of the higher-degree terms, in this case,
         #this is a polynomial with a single coefficient with degree the difference
@@ -208,7 +213,6 @@ def division(dividend, divisor):
         #print(remainder.bin)
         remainder_degree = len(remainder) - 1
         #print(remainder_degree)
-
     return quotient, remainder
 
     #function
