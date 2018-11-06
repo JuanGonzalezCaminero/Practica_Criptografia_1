@@ -21,10 +21,13 @@ class Encoder:
 
     def encode_element(self, element):
         '''
-        Returns the encoding of the element of the finite field given over Z2 using the
-        given irreducible polynomial, (Its a linear subspace of Z2) the linear map (Aplicación lineal),
-        which maps elements from the field onto elements of the code, is given by its transformation matrix
-        :param element: The element of a finite field to be encoded
+        Returns the encoding of the element of the source, formed by n elements from the
+        finite field given over Z2 using the given irreducible polynomial,
+        the linear map (Aplicación lineal), which maps elements from the source onto elements of the code,
+        of length m, is given by its transformation matrix
+        :param element: The element to be encoded, must be formed by n elements from the
+        finite field given over Z2 using the given irreducible polynomial, where n is the number of rows in
+        the transformation matrix
         :return: The encoding of the element by the linear mapping given by the transformation matrix, in a
         bitstring.BitArray object
         '''
@@ -44,7 +47,8 @@ class Encoder:
             for row in range(len(self.transformation_matrix)):
 
                 element_to_append = add(element_to_append,
-                    product_in_field(element[row : row+1], self.transformation_matrix[row][column], self.irreducible_polynomial))
+                    product_in_field(element[row : row + irreducible_degree], self.transformation_matrix[row][column],
+                                     self.irreducible_polynomial))
 
             result.append(element_to_append)
 
