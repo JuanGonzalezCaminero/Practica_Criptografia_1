@@ -1,6 +1,16 @@
 from bitstring import *
 from SeparatePrograms.suma_multiplicacion import *
 
+#Being a reed-solomon code (If the matrices are not for a reed-solomon code this will not work),
+#we ensure, for a m x n control matrix, that any selection of
+#m columns is linearly independent, so, the minimum weight in the code is exactly w = m + 1, that is,
+#we correct, at most w-1//2 errors, so, we ensure that any vector with weight <= w-1//2 is a leader of
+#its class. If the code isn't perfect, we will not get the leaders for all the classes by choosing
+#all the vectors with weight <= w-1//2, but, even if we choose vectors with more weight and ensure they are
+#leaders by checking their syndrome is not already the syndrome of other vector, those do not ensure
+#the correction they give will be the right one, so we only generate the leaders for the syndromes we can
+#correct, that is the leaders with weight <= w-1//2
+
 class ErrorCorrector:
     '''
     Provides methods for the correction of errors in a code. The current implementation corrects
@@ -71,11 +81,44 @@ class ErrorCorrector:
             corrected_data.append(self.correct_element(element))
         return corrected_data
 
+    def generate_vectors_with_weight(self, weight, length):
+        '''
+        Generator that returns, with each call, one of the vectors with the specified weight,
+        until all vectors have been returned. The len parameter specifies the length of the vector
+        to generate. The coefficients of the vectors are taken from the finite field generated from
+        Z2 using the specified irreducible polynomial
+        Weight is -1 because it is called with parameters from a range() function, that
+        starts at 0, so I just went with that
+        :param weight: The weight of the vectors to generate - 1 (Should change this)
+        :param length: The length of the vectors to generate
+        '''
+
+        for i in range(length):
+            base = i * self.irreducible_degree
+            for field_element in self.field_element_generator(self.irreducible_degree):
+                #Calculate the coefficient for the current position in the vector
+                vector = BitArray(self.code_element_length * self.irreducible_degree)
+                vector[base: base + self.irreducible_degree] = field_element
+                #If weight is not 0, continue generating coefficients to the right, if
+                #it is, complete with zeroes
+                if weight > 0:
+                    for right_part in self.generate_vectors_with_weight(weight - 1, length - i - 1):
+                        vector = copy.copy(vector)
+                        vector[base + self.irreducible_degree:] = right_part
+                        yield vector
+                else:
+                    vector = copy.copy(vector)
+                    vector[base + self.irreducible_degree:] = BitArray((length - i - 1) * self.irreducible_degree)
+                    yield vector
+
     def generate_leader_table(self):
         '''
         Generates a list of leader vectors and their syndromes, and stores them in self.syndrome_dict,
         the key being the syndrome
         '''
+
+        print("Generating leader vectors and syndromes...")
+
         #The leaders will be code_element_length * irreducible_degree bits long, that is, the
         #number of elements in a code word times the length of each of them
         #There will be (2 ^ irreducible_degree - 1) * code_element_length leaders of weight 1,
@@ -86,16 +129,34 @@ class ErrorCorrector:
         #and -1 since we don't count the 0
         #-Times the number of elements from the finite field in a code word
         #So, the number of states each element from a code word can take times the number of those elements in the word
-        for i in range(self.code_element_length):
-            base = i * self.irreducible_degree
-            for j in self.field_element_generator(self.irreducible_degree):
-                leader_to_add = BitString(self.code_element_length * self.irreducible_degree)
-                leader_to_add[base : base + self.irreducible_degree] = j
-                #Calculate the syndrome
+        # We generate all vectors with weight <= minimum weight-1//2
+
+        #for i in range(self.code_element_length):
+        #    base = i * self.irreducible_degree
+        #    for j in self.field_element_generator(self.irreducible_degree):
+        #        leader_to_add = BitString(self.code_element_length * self.irreducible_degree)
+        #        leader_to_add[base: base + self.irreducible_degree] = j
+                # Calculate the syndrome
+        #        syndrome = self.get_syndrome(leader_to_add)
+                # Store it in the dictionary alongside the leader that generated it
+                # Keys have to be hashable, so I use the ascii representation of the syndrome
+        #        self.syndromes_table[syndrome.bin] = leader_to_add
+
+        #weight to generate determines the weight of the vectors we are generating, we will first generate all weight
+        #1 vectors, starting from the base position, that is, all vectors will have their non-0 element in that base
+        #position, then, all weight 2 elements, that is, for each possible value at base, generate all possible values
+        #at base + 1, then at base + 2, etc, then for weight 3, we do the same but keeping the first 2 values, etc,
+        #by doing it in this way, only elements to the right of the base are generated, thus, no element is generated twice
+        for weight_to_generate in range(len(self.transposed_control[0]) // 2):
+            for leader_to_add in self.generate_vectors_with_weight(weight_to_generate, self.code_element_length):
+                #print("Generated:", leader_to_add)
+                # Calculate the syndrome
                 syndrome = self.get_syndrome(leader_to_add)
-                #Store it in the dictionary alongside the leader that generated it
-                #Keys have to be hashable, so I use the ascii representation of the syndrome
+                # Store it in the dictionary alongside the leader that generated it
+                # Keys have to be hashable, so I use the ascii representation of the syndrome
                 self.syndromes_table[syndrome.bin] = leader_to_add
+
+        print("Syndrome table finished")
 
     def get_syndrome(self, code_element):
         '''
@@ -165,6 +226,20 @@ class ErrorCorrector:
             yield stream[0:element_length]
             stream = stream[element_length:]
 
+
+
+#corrector = ErrorCorrector([[BitArray("0b1100"), BitArray("0b0001"), BitArray("0b0011"), BitArray("0b1111"), BitArray("0b0001"), BitArray("0b0000")],
+#                   [BitArray("0b1000"), BitArray("0b0011"), BitArray("0b0011"), BitArray("0b1001"), BitArray("0b0000"), BitArray("0b0001")]],
+#
+#                   [[BitArray("0b0001"), BitArray("0b0001"), BitArray("0b0001"), BitArray("0b0001"), BitArray("0b0001"), BitArray("0b0001")],
+#                    [BitArray("0b0001"), BitArray("0b0010"), BitArray("0b0100"), BitArray("0b1000"), BitArray("0b0011"), BitArray("0b0110")],
+#                    [BitArray("0b0001"), BitArray("0b0100"), BitArray("0b0011"), BitArray("0b1100"), BitArray("0b0101"), BitArray("0b0111")],
+#                    [BitArray("0b0001"), BitArray("0b1000"), BitArray("0b1100"), BitArray("0b1010"), BitArray("0b1111"), BitArray("0b0001")]],
+#
+#                  BitArray("0b10011"))
+#corrector.generate_leader_table()
+#for l in corrector.syndromes_table:
+#        print(l, corrector.syndromes_table[l])
 
 
 

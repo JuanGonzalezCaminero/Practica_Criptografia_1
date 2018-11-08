@@ -6,6 +6,15 @@ from SeparatePrograms.suma_multiplicacion import *
 #was at the beginning or the end, being able to point to m linearly independent rows
 #which could then be inverted and used to revert the transformation (???) How would we go
 #about this?
+#Implementing A general method: We have to find m linearly independent columns, so the square
+#matrix they form is inversible, we then invert it, and for decoding we would multiply the elements
+#of the code word corresponding to the columns we chose with the inverted matrix, that would revert
+#the linear application
+#For example, we have a 4 by 6 transformation matrix, we choose columns 1,2,4 and 6 as an inversible
+#square matrix, to decode the code word a1 a2 a3 a4 a5 a6 we would multiply a1 a2 a4 a6 with the inverted
+#of that matrix. This is what happens in the first, naive implementation, but there we always choose the last
+#m elements, and, since we consider those are always the identity matrix, and the inverse of the identity is the
+#same matrix, the decoded word is those same m elements
 class Decoder:
     #Both this parameters may be useful in a more general case?
     def __init__(self, transformation_matrix, irreducible_polynomial):

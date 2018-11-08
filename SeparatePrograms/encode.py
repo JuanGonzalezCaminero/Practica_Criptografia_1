@@ -10,6 +10,7 @@ from SeparatePrograms.suma_multiplicacion import *
 #using the transformation matrix provided and the irreducible polynomial with which the
 #field was generated, (everything in Z2)
 
+
 class Encoder:
     def __init__(self, transformation_matrix, irreducible_polynomial):
         '''
