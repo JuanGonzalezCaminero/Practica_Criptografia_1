@@ -35,7 +35,11 @@ def sum_mult():
 
 
 def encode(filename, transformation_matrix, irreducible_polynomial):
-    file = open(sys.path[0] + filename, 'rb+')
+    try:
+        file = open(sys.path[0] + filename, 'rb+')
+    except FileNotFoundError:
+        print("El fichero especificado no existe")
+        return
 
     encoder = Encoder(transformation_matrix, irreducible_polynomial)
 
@@ -44,7 +48,11 @@ def encode(filename, transformation_matrix, irreducible_polynomial):
 
 
 def decode(filename, transformation_matrix, irreducible_polynomial):
-    file = open(sys.path[0] + filename, 'rb+')
+    try:
+        file = open(sys.path[0] + filename, 'rb+')
+    except FileNotFoundError:
+        print("El fichero especificado no existe")
+        return
 
     decoder = Decoder(transformation_matrix, irreducible_polynomial)
 
@@ -68,3 +76,33 @@ def generate_temp_binary_file(filename, temp_filename):
     file = open(sys.path[0] + "\\" + temp_filename, 'bw+')
     file.write(bytes.fromhex(binary_version.hex))
     file.close()
+
+def introduce_errors(filename, error_frequency):
+    '''
+    Flips one bit from filename each error_frequency bits
+    :param filename: The file where the errors are to be introduced
+    :param error_frequency: Interval between flipped bits
+    :return: A BitArray containing the original data with the errors
+    '''
+    file = open(sys.path[0] + "\\" + filename, 'rb+')
+    data = BitArray()
+    bytes_data = file.read()
+    for byte in bytes_data:
+        data.append(BitArray(bin = "0b" +  bin(int(byte))[2:].zfill(8)))
+    for i in range(0,len(data),error_frequency):
+        if(data[i] == 0):
+            data[i] = 1
+        else:
+            data[i] = 0
+    return data
+
+
+
+
+
+
+
+
+
+
+

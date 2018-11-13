@@ -57,10 +57,29 @@ class ErrorCorrector:
             try:
                 leader = self.syndromes_table[syndrome.bin]
             except KeyError:
-                print("Could not be corrected")
-                print(syndrome)
-                print(code_element)
-                leader = BitArray(self.code_element_length * self.irreducible_degree)
+                print("An element could not be corrected:")
+                print("Syndrome:", syndrome.bin)
+                print("Element:", code_element.bin)
+                # This code works, assuming a great too many conditions, it should
+                # be deleted, the original solution was to just make the leader an
+                # array of zeroes, which meant no correction was applied
+                ##############################################################################################
+                fake_correction = BitArray(self.code_element_length * self.irreducible_degree)
+                #This assumes the identity matrix in the transformation matrix was in the last
+                #columns, and the matrix has an even number of columns, the result will be wrong
+                #otherwise and this should be removed. Also assumes the length of the elements of the
+                #field is 4, so it will not work for different length irreducible polynomials
+                #Returns an element that, hopefully, will decode into one of more of the ASCII
+                #character '*', this is just for the sake of identifying the items which couldn't be
+                #corrected in the output, however, it is by no means necessary and is quite problematic,
+                #as I explained
+                asterisks = BitArray()
+                for i in range(len(self.transformation_matrix), 0, -2):
+                    asterisks.append(BitArray(bin = "0b00101010"))
+                fake_correction[-len(asterisks):] = asterisks
+                return fake_correction
+                #################################################################################################
+
             corrected_element = add(code_element, leader)
             #print(corrected_element)
             return corrected_element
@@ -130,17 +149,6 @@ class ErrorCorrector:
         #-Times the number of elements from the finite field in a code word
         #So, the number of states each element from a code word can take times the number of those elements in the word
         # We generate all vectors with weight <= minimum weight-1//2
-
-        #for i in range(self.code_element_length):
-        #    base = i * self.irreducible_degree
-        #    for j in self.field_element_generator(self.irreducible_degree):
-        #        leader_to_add = BitString(self.code_element_length * self.irreducible_degree)
-        #        leader_to_add[base: base + self.irreducible_degree] = j
-                # Calculate the syndrome
-        #        syndrome = self.get_syndrome(leader_to_add)
-                # Store it in the dictionary alongside the leader that generated it
-                # Keys have to be hashable, so I use the ascii representation of the syndrome
-        #        self.syndromes_table[syndrome.bin] = leader_to_add
 
         #weight to generate determines the weight of the vectors we are generating, we will first generate all weight
         #1 vectors, starting from the base position, that is, all vectors will have their non-0 element in that base
