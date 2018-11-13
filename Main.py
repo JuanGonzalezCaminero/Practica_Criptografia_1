@@ -111,11 +111,15 @@ while True:
         # If the data is read from an text file containing "1" and "0",
         # it is transformed to a bit sequence, which is subsequently saved
         # in a temporal binary file, used as the stream passed to the decoder
-        utility.generate_temp_binary_file(FICHERO_CODIFICADO_ASCII, FICHERO_TEMPORAL)
+        try:
+            utility.generate_temp_binary_file(FICHERO_CODIFICADO_ASCII, FICHERO_TEMPORAL)
 
-        corrected = utility.correct("\\" + FICHERO_TEMPORAL, transformation_matrix, control_matrix, irreducible_polynomial)
+            corrected = utility.correct("\\" + FICHERO_TEMPORAL, transformation_matrix, control_matrix, irreducible_polynomial)
 
-        os.remove(sys.path[0] + "\\" + FICHERO_TEMPORAL)
+            os.remove(sys.path[0] + "\\" + FICHERO_TEMPORAL)
+        except FileNotFoundError:
+            print("No se ha encontrado el fichero codificado")
+            continue
         # Save the results
         if GENERATE_BINARY_FILES:
             file = open(sys.path[0] + "\\" + FICHERO_CORREGIDO_BINARIO, 'bw+')
@@ -163,11 +167,15 @@ while True:
 
     if errors:
         error_frequency = int(input("¿Cada cuántos bits quieres introducir un error?\n"))
-        utility.generate_temp_binary_file(FICHERO_CODIFICADO_ASCII, FICHERO_TEMPORAL)
+        try:
+            utility.generate_temp_binary_file(FICHERO_CODIFICADO_ASCII, FICHERO_TEMPORAL)
 
-        encoded_with_errors = utility.introduce_errors("\\" + FICHERO_TEMPORAL, error_frequency)
+            encoded_with_errors = utility.introduce_errors("\\" + FICHERO_TEMPORAL, error_frequency)
 
-        os.remove(sys.path[0] + "\\" + FICHERO_TEMPORAL)
+            os.remove(sys.path[0] + "\\" + FICHERO_TEMPORAL)
+        except FileNotFoundError:
+            print("No se ha encontrado el fichero codificado")
+            continue
 
         #Overwriting the encoded file
         file = open(sys.path[0] + "\\" + FICHERO_CODIFICADO_ASCII, 'w+')
